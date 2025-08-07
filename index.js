@@ -23,11 +23,33 @@ client.on('message', (topic, message) => {
     const payload = JSON.parse(message.toString());
 
     if (topic === '/sensors/create') {
-      createSensor(payload);
-    } else if (topic === '/sensors/delete') {
-      deleteSensor(payload.deviceCode);
+      try {
+      const payload = JSON.parse(message.toString());
+
+      if (Array.isArray(payload)) {
+        payload.forEach(sensor => createSensor(sensor));
+      } else {
+        createSensor(payload);
+      }
+
+    } catch (err) {
+      console.error('❌ Invalid payload:', message.toString());
     }
-  } catch (err) { 
+    } else if (topic === '/sensors/delete') {
+      try {
+        const payload = JSON.parse(message.toString());
+
+        if (Array.isArray(payload)) {
+          payload.forEach(idObj => deleteSensor(idObj.deviceCode || idObj)); // chấp nhận cả dạng [{id: "sensor-1"}] hoặc ["sensor-1"]
+        } else {
+          deleteSensor(payload.deviceCode || payload);
+        }
+
+      } catch (err) {
+        console.error('❌ Invalid delete payload:', message.toString());
+      }
+    }
+  } catch (err) {
     console.error('❌ Invalid message:', err.message);
   }
 });
@@ -75,10 +97,10 @@ function randomInRange(min, max) {
 // Gửi dữ liệu định kỳ
 setInterval(() => {
   sensors.forEach(sensor => {
-    sensor.temperature = randomize(sensor.temperature, 16, 35, 10);
-    sensor.humidity = randomize(sensor.humidity, 30, 90, 10);
-    sensor.light = randomize(sensor.light, 100, 1600, 100);
-    sensor.co2 = randomize(sensor.co2, 900, 1600, 100);
+    sensor.temperature = randomize(sensor.temperature, 16, 35, 1.5);
+    sensor.humidity = randomize(sensor.humidity, 30, 90, 3.5);
+    sensor.light = randomize(sensor.light, 200, 1600, 10.5);
+    sensor.co2 = randomize(sensor.co2, 900, 1600, 5.5);
 
     const data = {
       deviceCode: sensor.deviceCode,
